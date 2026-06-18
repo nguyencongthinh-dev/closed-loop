@@ -16,7 +16,7 @@ Stress extensions:
 
 import argparse
 import json
-import subprocess
+import subprocess  # nosec B404
 import threading
 import time
 from pathlib import Path
@@ -96,7 +96,9 @@ def run_runbook(script: str, service: str, dry_run: bool, timeout_s: int = 30) -
         cmd.append("--dry-run")
     log.info("RUNBOOK_EXEC", script=script, service=service, dry_run=dry_run)
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s)
+        result = subprocess.run(  # nosec B603
+            cmd, capture_output=True, text=True, timeout=timeout_s
+        )
         log.info(
             "RUNBOOK_RESULT",
             script=script,

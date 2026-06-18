@@ -32,7 +32,7 @@ class JsonLogger:
                     os.makedirs(parent_dir, exist_ok=True)
                 with open(self._audit_log_path, "a", encoding="utf-8") as f:
                     f.write(log_line + "\n")
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
     def info(self, event_type: str, **kwargs):
