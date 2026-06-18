@@ -80,9 +80,13 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
+        # evidently 0.4.x API (metric_preset, Report(metrics=[...]), drift_by_columns)
+        # -- code uses old API removed in evidently 1.0+. Pin 0.4.30 + numpy<2
+        # (0.4.x relies on np.float_, removed in numpy 2.0).
         run: |
           uv pip install --system \
-            mlflow scikit-learn pandas numpy evidently \
+            mlflow scikit-learn "pandas>=2.0,<2.4" "numpy<2" \
+            "evidently==0.4.30" \
             fastapi uvicorn prometheus-client httpx \
             optuna pytest pytest-cov
 
@@ -124,9 +128,11 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
+        # Same evidently 0.4.x pin as the test job (see comment there).
         run: |
           uv pip install --system \
-            mlflow scikit-learn pandas numpy evidently optuna prometheus-client
+            mlflow scikit-learn "pandas>=2.0,<2.4" "numpy<2" \
+            "evidently==0.4.30" optuna prometheus-client
 
       - name: Create output directories
         run: mkdir -p outputs/drift_reports
@@ -275,9 +281,12 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
+        # Same numpy<2 pin as the test job (pipeline.py itself doesn't import
+        # evidently, but other modules in thinh/ do, and mlflow/pandas can pull
+        # numpy 2.x which breaks them).
         run: |
           uv pip install --system \
-            mlflow scikit-learn pandas numpy optuna prometheus-client
+            mlflow scikit-learn "pandas>=2.0,<2.4" "numpy<2" optuna prometheus-client
 
       - name: Start MLflow server (background)
         run: |
