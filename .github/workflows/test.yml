@@ -10,6 +10,9 @@ jobs:
   test:
     name: Run Python Unit Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lab-closed-loop
 
     steps:
       - name: Checkout repository
