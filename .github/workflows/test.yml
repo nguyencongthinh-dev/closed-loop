@@ -26,17 +26,15 @@ jobs:
 
       - name: Run Ruff Linter
         run: |
-          uv pip install ruff
-          uv run ruff check lab-closed-loop/tdd
+          uvx ruff check lab-closed-loop/tdd
 
       - name: Run Ruff Formatter Check
         run: |
-          uv run ruff format --check lab-closed-loop/tdd
+          uvx ruff format --check lab-closed-loop/tdd
 
       - name: Run Security Scan (Bandit)
         run: |
-          uv pip install bandit
-          uv run bandit -r lab-closed-loop/tdd/ -x lab-closed-loop/tdd/test_closed_loop.py
+          uvx bandit -r lab-closed-loop/tdd/ -x lab-closed-loop/tdd/test_closed_loop.py
 
       - name: Run ShellCheck on Runbooks
         run: |
