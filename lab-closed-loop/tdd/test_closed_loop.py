@@ -1,6 +1,6 @@
 import sys
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 import time
 import threading
 from pathlib import Path
@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import closed_loop
 from engine.safety import BlastRadiusGuard, CircuitBreaker
-from engine.verify import verify_service, query_prometheus
 
 
 class TestBlastRadiusGuard(unittest.TestCase):
