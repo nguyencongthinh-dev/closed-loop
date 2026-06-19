@@ -1,4 +1,4 @@
-# AIOps & MLOps Labs
+# Ops Automation Labs
 
 This repository is a unified workspace containing the implementation, design documents, and acceptance logs for two core labs:
 
@@ -10,7 +10,7 @@ This repository is a unified workspace containing the implementation, design doc
 ## Repository Structure
 
 ```
-aiops-mlops-labs/
+ops-automation-labs/
 ├── closed-loop/               # Closed-Loop Auto-Remediation Lab
 │   ├── tdd/                   # Core orchestrator implementation, tests, design and submission docs
 │   └── data-pack/             # Baseline metrics, Docker configs, and setup/chaos scripts
