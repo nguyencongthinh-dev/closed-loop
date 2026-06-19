@@ -1,0 +1,12 @@
+mlflow
+scikit-learn
+pandas>=2.0,<2.4
+numpy<2
+evidently==0.4.30
+fastapi
+uvicorn
+prometheus-client
+httpx
+optuna
+pytest
+pytest-cov
