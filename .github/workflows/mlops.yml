@@ -4,12 +4,12 @@ on:
   push:
     branches: [main, dev]
     paths:
-      - "thinh/**"
+      - "mlops-lifecycle/thinh/**"
       - ".github/workflows/mlops.yml"
   pull_request:
     branches: [main]
     paths:
-      - "thinh/**"
+      - "mlops-lifecycle/thinh/**"
   workflow_dispatch:
     inputs:
       run_training:
@@ -28,10 +28,15 @@ on:
         description: "Number of Optuna trials (only used when use_optuna=true)"
         required: false
         default: "20"
+        type: choice
 
 env:
   MLFLOW_TRACKING_URI: http://localhost:5000
-  PYTHONPATH: ${{ github.workspace }}/thinh
+  PYTHONPATH: ${{ github.workspace }}/mlops-lifecycle/thinh
+
+defaults:
+  run:
+    working-directory: mlops-lifecycle
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
@@ -104,7 +109,7 @@ jobs:
         uses: codecov/codecov-action@v4
         if: always()
         with:
-          files: coverage.xml
+          files: mlops-lifecycle/coverage.xml
           fail_ci_if_error: false
 
   # ─────────────────────────────────────────────────────────────────────────

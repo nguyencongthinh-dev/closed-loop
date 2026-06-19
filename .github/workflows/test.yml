@@ -26,19 +26,19 @@ jobs:
 
       - name: Run Ruff Linter
         run: |
-          uvx ruff check lab-closed-loop/tdd
+          uvx ruff check closed-loop/tdd
 
       - name: Run Ruff Formatter Check
         run: |
-          uvx ruff format --check lab-closed-loop/tdd
+          uvx ruff format --check closed-loop/tdd
 
       - name: Run Security Scan (Bandit)
         run: |
-          uvx bandit -r lab-closed-loop/tdd/ -x lab-closed-loop/tdd/test_closed_loop.py
+          uvx bandit -r closed-loop/tdd/ -x closed-loop/tdd/test_closed_loop.py
 
       - name: Run ShellCheck on Runbooks
         run: |
-          shellcheck lab-closed-loop/tdd/runbooks/*.sh
+          shellcheck closed-loop/tdd/runbooks/*.sh
 
   test:
     name: Unit Tests & Coverage
@@ -50,7 +50,7 @@ jobs:
         python-version: ['3.11']
     defaults:
       run:
-        working-directory: lab-closed-loop
+        working-directory: closed-loop
 
     steps:
       - name: Checkout repository
