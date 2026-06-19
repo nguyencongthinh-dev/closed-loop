@@ -45,14 +45,20 @@ log = logging.getLogger(__name__)
 
 # ─────────────────────────── Prometheus Metrics ───────────────────────────────
 _serve_requests = Counter("serve_requests_total", "Total predict requests")
-_serve_errors = Counter("serve_errors_total", "Total predict errors (validation + model)")
+_serve_errors = Counter(
+    "serve_errors_total", "Total predict errors (validation + model)"
+)
 _serve_latency = Histogram(
     "serve_predict_latency_seconds",
     "Predict endpoint latency in seconds",
     buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5],
 )
-_serve_active_version = Gauge("serve_active_version", "Currently loaded model version number")
-_serve_anomaly_rate = Gauge("serve_batch_anomaly_rate", "Fraction of anomalies in last predict batch")
+_serve_active_version = Gauge(
+    "serve_active_version", "Currently loaded model version number"
+)
+_serve_anomaly_rate = Gauge(
+    "serve_batch_anomaly_rate", "Fraction of anomalies in last predict batch"
+)
 
 MODEL_NAME = "anomaly-detector"
 MODEL_URI = f"models:/{MODEL_NAME}@production"
@@ -68,11 +74,19 @@ _state: dict[str, Any] = {
 
 # ─────────────────────────── Pydantic Schemas ────────────────────────────────
 
+
 class FeatureRow(BaseModel):
     """Single row of features with strict business-rule validation."""
-    latency_p99: Annotated[float, Field(gt=0, description="p99 latency in ms — must be positive")]
-    error_rate: Annotated[float, Field(ge=0.0, le=1.0, description="Error rate as a fraction [0, 1]")]
-    rps: Annotated[float, Field(ge=0.0, description="Requests per second — must be non-negative")]
+
+    latency_p99: Annotated[
+        float, Field(gt=0, description="p99 latency in ms — must be positive")
+    ]
+    error_rate: Annotated[
+        float, Field(ge=0.0, le=1.0, description="Error rate as a fraction [0, 1]")
+    ]
+    rps: Annotated[
+        float, Field(ge=0.0, description="Requests per second — must be non-negative")
+    ]
 
 
 class PredictRequest(BaseModel):
@@ -82,6 +96,7 @@ class PredictRequest(BaseModel):
       - Structured: {"features": [{"latency_p99": 120, "error_rate": 0.01, "rps": 450}]}
       - Raw matrix: {"features": [[120, 0.01, 450]]}  (order: latency_p99, error_rate, rps)
     """
+
     features: list[list[float]] | list[FeatureRow]
 
     @model_validator(mode="before")
@@ -113,9 +128,9 @@ class PredictRequest(BaseModel):
 
 
 class PredictResponse(BaseModel):
-    predictions: list[int]    # -1 = anomaly, 1 = normal
-    scores: list[float]       # raw anomaly score (more negative = more anomalous)
-    anomaly_rate: float       # fraction of anomalies in this batch
+    predictions: list[int]  # -1 = anomaly, 1 = normal
+    scores: list[float]  # raw anomaly score (more negative = more anomalous)
+    anomaly_rate: float  # fraction of anomalies in this batch
     version: str
     model_name: str
 
@@ -128,6 +143,7 @@ class VersionResponse(BaseModel):
 
 
 # ─────────────────────────── Model Loading ───────────────────────────────────
+
 
 def _load_model() -> None:
     tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
@@ -149,6 +165,7 @@ def _load_model() -> None:
 
 # ─────────────────────────── App Lifecycle ───────────────────────────────────
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _load_model()
@@ -168,6 +185,7 @@ app = FastAPI(
 
 
 # ─────────────────────────── Endpoints ───────────────────────────────────────
+
 
 @app.get("/metrics")
 def metrics():
@@ -191,10 +209,9 @@ def predict(req: PredictRequest):
     t0 = time.perf_counter()
     try:
         # Convert FeatureRow objects to numpy array
-        X = np.array([
-            [row.latency_p99, row.error_rate, row.rps]
-            for row in req.features
-        ])
+        X = np.array(
+            [[row.latency_p99, row.error_rate, row.rps] for row in req.features]
+        )
 
         predictions = _state["model"].predict(X).tolist()
         scores = _state["model"].score_samples(X).tolist()
@@ -245,6 +262,7 @@ def reload():
 
 
 # ─────────────────────────── CLI ─────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="Run anomaly detector API")

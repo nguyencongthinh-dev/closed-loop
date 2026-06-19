@@ -47,7 +47,7 @@ from evidently.report import Report
 
 FEATURES = ["latency_p99", "error_rate", "rps"]
 DEFAULT_THRESHOLD = 0.15
-DEFAULT_PERF_THRESHOLD = 0.70   # minimum acceptable precision on labeled holdout
+DEFAULT_PERF_THRESHOLD = 0.70  # minimum acceptable precision on labeled holdout
 REPORT_DIR = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "outputs", "drift_reports"
 )
@@ -58,9 +58,11 @@ log = logging.getLogger(__name__)
 
 # ─────────────────────────── Data Classes ────────────────────────────────────
 
+
 @dataclass
 class FeatureDriftDetail:
     """Per-feature drift breakdown."""
+
     feature: str
     drift_detected: bool
     stat_test: str = ""
@@ -70,7 +72,7 @@ class FeatureDriftDetail:
 
 @dataclass
 class DriftResult:
-    score: float            # fraction of features drifted (0.0-1.0)
+    score: float  # fraction of features drifted (0.0-1.0)
     is_drift: bool
     threshold: float
     drifted_features: list
@@ -86,6 +88,7 @@ class DriftResult:
 
 
 # ─────────────────────────── Core Detection ──────────────────────────────────
+
 
 def detect_drift(
     reference_df: pd.DataFrame,
@@ -122,21 +125,22 @@ def detect_drift(
     share_drifted = drift_metrics.get("share_of_drifted_columns", 0.0)
     per_feature = table_metrics.get("drift_by_columns", {})
     drifted_features = [
-        feat for feat, info in per_feature.items()
-        if info.get("drift_detected", False)
+        feat for feat, info in per_feature.items() if info.get("drift_detected", False)
     ]
 
     # ── Rich per-feature details ──────────────────────────────────────────────
     feature_details: list[FeatureDriftDetail] = []
     for feat in FEATURES:
         info = per_feature.get(feat, {})
-        feature_details.append(FeatureDriftDetail(
-            feature=feat,
-            drift_detected=info.get("drift_detected", False),
-            stat_test=info.get("stattest_name", ""),
-            p_value=info.get("p_value"),
-            drift_score=info.get("drift_score"),
-        ))
+        feature_details.append(
+            FeatureDriftDetail(
+                feature=feat,
+                drift_detected=info.get("drift_detected", False),
+                stat_test=info.get("stattest_name", ""),
+                p_value=info.get("p_value"),
+                drift_score=info.get("drift_score"),
+            )
+        )
 
     # ── Save HTML Report ──────────────────────────────────────────────────────
     os.makedirs(REPORT_DIR, exist_ok=True)
@@ -189,6 +193,7 @@ def detect_drift(
 
 # ─────────────────────────── Performance Drift ───────────────────────────────
 
+
 def check_performance_drift(
     labeled_df: pd.DataFrame,
     model_uri: str,
@@ -205,7 +210,9 @@ def check_performance_drift(
     import mlflow.pyfunc
 
     if "anomaly_label" not in labeled_df.columns:
-        raise ValueError("labeled_df must contain 'anomaly_label' column (0=normal, 1=anomaly)")
+        raise ValueError(
+            "labeled_df must contain 'anomaly_label' column (0=normal, 1=anomaly)"
+        )
 
     model = mlflow.pyfunc.load_model(model_uri)
     X = labeled_df[FEATURES].dropna()
@@ -234,7 +241,10 @@ def check_performance_drift(
 
 # ─────────────────────────── MLflow Logging ──────────────────────────────────
 
-def log_to_mlflow(result: DriftResult, experiment_name: str = "anomaly-detection-drift") -> None:
+
+def log_to_mlflow(
+    result: DriftResult, experiment_name: str = "anomaly-detection-drift"
+) -> None:
     """Log drift score, HTML report, and summary JSON vao MLflow de visualize trend."""
     tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
     mlflow.set_tracking_uri(tracking_uri)
@@ -245,7 +255,9 @@ def log_to_mlflow(result: DriftResult, experiment_name: str = "anomaly-detection
         mlflow.log_metric("is_drift", float(result.is_drift))
         mlflow.log_metric("n_drifted_features", len(result.drifted_features))
         mlflow.log_param("threshold", result.threshold)
-        mlflow.log_param("drifted_features", ",".join(result.drifted_features) or "none")
+        mlflow.log_param(
+            "drifted_features", ",".join(result.drifted_features) or "none"
+        )
 
         # Log per-feature drift details as metrics
         for detail in result.feature_details:
@@ -270,25 +282,50 @@ def log_to_mlflow(result: DriftResult, experiment_name: str = "anomaly-detection
 
 # ─────────────────────────── CLI ─────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="Detect data drift between two CSVs")
-    parser.add_argument("--reference", required=True, help="Path to reference (baseline) CSV")
-    parser.add_argument("--current", required=True, help="Path to current (production window) CSV")
-    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD,
-                        help=f"Drift score threshold (default: {DEFAULT_THRESHOLD})")
     parser.add_argument(
-        "--check-mode", choices=["data", "performance", "combined"], default="combined",
-        help="data: Evidently DataDriftPreset only; performance: precision/recall on labeled data; "
-             "combined: both (default)",
+        "--reference", required=True, help="Path to reference (baseline) CSV"
     )
-    parser.add_argument("--labeled-current", default=None,
-                        help="CSV with anomaly_label column -- required for performance/combined mode")
-    parser.add_argument("--model-uri", default="models:/anomaly-detector@production",
-                        help="MLflow model URI for performance evaluation")
-    parser.add_argument("--perf-threshold", type=float, default=DEFAULT_PERF_THRESHOLD,
-                        help=f"Minimum acceptable precision (default: {DEFAULT_PERF_THRESHOLD})")
-    parser.add_argument("--log-mlflow", action="store_true", default=False,
-                        help="Log drift score and reports to MLflow tracking server")
+    parser.add_argument(
+        "--current", required=True, help="Path to current (production window) CSV"
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=DEFAULT_THRESHOLD,
+        help=f"Drift score threshold (default: {DEFAULT_THRESHOLD})",
+    )
+    parser.add_argument(
+        "--check-mode",
+        choices=["data", "performance", "combined"],
+        default="combined",
+        help="data: Evidently DataDriftPreset only; performance: precision/recall on labeled data; "
+        "combined: both (default)",
+    )
+    parser.add_argument(
+        "--labeled-current",
+        default=None,
+        help="CSV with anomaly_label column -- required for performance/combined mode",
+    )
+    parser.add_argument(
+        "--model-uri",
+        default="models:/anomaly-detector@production",
+        help="MLflow model URI for performance evaluation",
+    )
+    parser.add_argument(
+        "--perf-threshold",
+        type=float,
+        default=DEFAULT_PERF_THRESHOLD,
+        help=f"Minimum acceptable precision (default: {DEFAULT_PERF_THRESHOLD})",
+    )
+    parser.add_argument(
+        "--log-mlflow",
+        action="store_true",
+        default=False,
+        help="Log drift score and reports to MLflow tracking server",
+    )
     args = parser.parse_args()
 
     ref_df = pd.read_csv(args.reference)
@@ -313,8 +350,13 @@ def main():
     else:
         ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
         result = DriftResult(
-            score=0.0, is_drift=False, threshold=args.threshold,
-            drifted_features=[], report_path="", summary_path="", timestamp=ts,
+            score=0.0,
+            is_drift=False,
+            threshold=args.threshold,
+            drifted_features=[],
+            report_path="",
+            summary_path="",
+            timestamp=ts,
         )
 
     # ── Performance (concept drift) check ────────────────────────────────────
@@ -323,13 +365,17 @@ def main():
             parser.error("--labeled-current is required for performance/combined mode")
         labeled_df = pd.read_csv(args.labeled_current)
         precision, recall, is_degraded = check_performance_drift(
-            labeled_df, args.model_uri, perf_threshold=args.perf_threshold,
+            labeled_df,
+            args.model_uri,
+            perf_threshold=args.perf_threshold,
         )
         result.perf_precision = precision
         result.perf_recall = recall
         result.perf_is_degraded = is_degraded
         result.perf_threshold = args.perf_threshold
-        print(f"[drift_detector] Perf precision   : {precision:.4f}  (threshold {args.perf_threshold})")
+        print(
+            f"[drift_detector] Perf precision   : {precision:.4f}  (threshold {args.perf_threshold})"
+        )
         print(f"[drift_detector] Perf recall      : {recall:.4f}")
         print(f"[drift_detector] Perf degraded    : {is_degraded}")
 
@@ -341,12 +387,17 @@ def main():
     # Push metrics to Prometheus Pushgateway
     try:
         from metrics_util import push_drift_score, push_model_eval
+
         push_drift_score(result.score, result.threshold)
         if result.perf_precision is not None:
             f1 = 0.0
             if (result.perf_precision + result.perf_recall) > 0:
-                f1 = (2 * result.perf_precision * result.perf_recall
-                      / (result.perf_precision + result.perf_recall))
+                f1 = (
+                    2
+                    * result.perf_precision
+                    * result.perf_recall
+                    / (result.perf_precision + result.perf_recall)
+                )
             push_model_eval("current", result.perf_precision, result.perf_recall, f1)
     except ImportError:
         pass

@@ -18,9 +18,15 @@ def _registry() -> CollectorRegistry:
 def push_drift_score(score: float, threshold: float) -> None:
     """Push current drift score and threshold to pushgateway (job=drift_detector)."""
     reg = _registry()
-    g_score = Gauge("mlops_drift_score", "Fraction of features drifted (0-1)", registry=reg)
-    g_thresh = Gauge("mlops_drift_threshold", "Configured drift threshold", registry=reg)
-    g_flag = Gauge("mlops_drift_is_drift", "1 if drift detected, 0 otherwise", registry=reg)
+    g_score = Gauge(
+        "mlops_drift_score", "Fraction of features drifted (0-1)", registry=reg
+    )
+    g_thresh = Gauge(
+        "mlops_drift_threshold", "Configured drift threshold", registry=reg
+    )
+    g_flag = Gauge(
+        "mlops_drift_is_drift", "1 if drift detected, 0 otherwise", registry=reg
+    )
     g_score.set(score)
     g_thresh.set(threshold)
     g_flag.set(1.0 if score > threshold else 0.0)
@@ -34,7 +40,9 @@ def push_model_eval(version: str, precision: float, recall: float, f1: float) ->
     """Push per-version precision/recall/f1 to pushgateway (job=retrain)."""
     reg = _registry()
     labels = ["version"]
-    g_p = Gauge("mlops_model_precision", "Model precision on eval set", labels, registry=reg)
+    g_p = Gauge(
+        "mlops_model_precision", "Model precision on eval set", labels, registry=reg
+    )
     g_r = Gauge("mlops_model_recall", "Model recall on eval set", labels, registry=reg)
     g_f = Gauge("mlops_model_f1", "Model F1 on eval set", labels, registry=reg)
     g_p.labels(version=version).set(precision)

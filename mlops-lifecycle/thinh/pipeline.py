@@ -47,6 +47,7 @@ log = logging.getLogger(__name__)
 
 # ─────────────────────────── Data Loading ───────────────────────────────────
 
+
 def load_features(csv_path: str) -> pd.DataFrame:
     """Load and validate feature columns from a CSV file."""
     df = pd.read_csv(csv_path, parse_dates=["timestamp"])
@@ -57,6 +58,7 @@ def load_features(csv_path: str) -> pd.DataFrame:
 
 
 # ─────────────────────────── AutoML Tuning ──────────────────────────────────
+
 
 def _isolation_forest_objective(trial, X_scaled: np.ndarray) -> float:
     """Optuna objective: maximize the mean anomaly score magnitude (higher = more separable).
@@ -97,6 +99,7 @@ def tune_hyperparameters(X_scaled: np.ndarray, n_trials: int = 30) -> dict:
     Returns the best_params dict from the study.
     """
     import optuna
+
     # Silence Optuna's verbose trial logs
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -122,6 +125,7 @@ def tune_hyperparameters(X_scaled: np.ndarray, n_trials: int = 30) -> dict:
 
 # ─────────────────────────── LOF Detector ───────────────────────────
 
+
 def train_lof(
     X_scaled: np.ndarray,
     n_neighbors: int = 20,
@@ -138,7 +142,7 @@ def train_lof(
     lof = LocalOutlierFactor(
         n_neighbors=n_neighbors,
         contamination=contamination,
-        novelty=False,   # fit_predict mode: trained on same dataset
+        novelty=False,  # fit_predict mode: trained on same dataset
         n_jobs=-1,
     )
     labels = lof.fit_predict(X_scaled)  # -1=anomaly, 1=normal
@@ -149,6 +153,7 @@ def train_lof(
 
 
 # ─────────────────────────── Training ───────────────────────────
+
 
 def train(
     data_path: str,
@@ -176,7 +181,11 @@ def train(
         n_estimators = best_params["n_estimators"]
         max_features = best_params.get("max_features", 1.0)
         max_samples = best_params.get("max_samples", "auto")
-        log.info("Using tuned params: contamination=%.4f n_estimators=%d", contamination, n_estimators)
+        log.info(
+            "Using tuned params: contamination=%.4f n_estimators=%d",
+            contamination,
+            n_estimators,
+        )
     else:
         max_features = 1.0
         max_samples = "auto"
@@ -213,12 +222,20 @@ def train(
     print(f"  {'Detector':<25} {'Anomaly Rate':>12} {'Mean Score':>12}")
     print("  " + "-" * 52)
     print(f"  {'IsolationForest':<25} {anomaly_rate:>12.4f} {mean_score:>12.4f}")
-    print(f"  {'LOF (n_neighbors=20)':<25} {lof_anomaly_rate:>12.4f} {lof_mean_score:>12.4f}")
+    print(
+        f"  {'LOF (n_neighbors=20)':<25} {lof_anomaly_rate:>12.4f} {lof_mean_score:>12.4f}"
+    )
     print("  " + "-" * 52)
-    print(f"  Detector agreement rate : {agreement_rate:.4f} ({agreement_rate*100:.1f}% of rows agree)")
+    print(
+        f"  Detector agreement rate : {agreement_rate:.4f} ({agreement_rate * 100:.1f}% of rows agree)"
+    )
     print()
-    log.info("IsoForest anomaly_rate=%.4f, LOF anomaly_rate=%.4f, agreement=%.4f",
-             anomaly_rate, lof_anomaly_rate, agreement_rate)
+    log.info(
+        "IsoForest anomaly_rate=%.4f, LOF anomaly_rate=%.4f, agreement=%.4f",
+        anomaly_rate,
+        lof_anomaly_rate,
+        agreement_rate,
+    )
 
     # ── MLflow Logging ────────────────────────────────────────────────────────
     with mlflow.start_run() as run:
@@ -249,6 +266,7 @@ def train(
         # Log scaler as artifact
         import pickle
         import tempfile
+
         with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
             pickle.dump(scaler, f)
             scaler_path = f.name
@@ -280,22 +298,35 @@ def train(
 
 # ─────────────────────────── CLI ─────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Train anomaly detection model (IsolationForest + optional Optuna AutoML)"
     )
     parser.add_argument("--data", required=True, help="Path to training CSV")
-    parser.add_argument("--contamination", type=float, default=0.03,
-                        help="Fraction of expected anomalies (ignored if --tune is set)")
-    parser.add_argument("--n-estimators", type=int, default=100,
-                        help="Number of trees (ignored if --tune is set)")
+    parser.add_argument(
+        "--contamination",
+        type=float,
+        default=0.03,
+        help="Fraction of expected anomalies (ignored if --tune is set)",
+    )
+    parser.add_argument(
+        "--n-estimators",
+        type=int,
+        default=100,
+        help="Number of trees (ignored if --tune is set)",
+    )
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument(
-        "--tune", action="store_true", default=False,
+        "--tune",
+        action="store_true",
+        default=False,
         help="Enable Optuna AutoML hyperparameter search (overrides --contamination / --n-estimators)",
     )
     parser.add_argument(
-        "--n-trials", type=int, default=30,
+        "--n-trials",
+        type=int,
+        default=30,
         help="Number of Optuna trials (only used when --tune is set, default: 30)",
     )
     args = parser.parse_args()
